@@ -1,0 +1,5 @@
+ru\spigotmc\destroy\NewbieChat\Data.class
+ru\spigotmc\destroy\NewbieChat\listeners\AsyncChatListener.class
+ru\spigotmc\destroy\NewbieChat\MySQL\Sql.class
+ru\spigotmc\destroy\NewbieChat\plugin.class
+ru\spigotmc\destroy\NewbieChat\listeners\JoinListener.class

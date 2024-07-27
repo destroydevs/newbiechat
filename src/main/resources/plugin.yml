@@ -1,0 +1,7 @@
+name: NewbieChat
+version: '1.6.8'
+main: ru.spigotmc.destroy.newbiechat.NewbieChat
+commands:
+  newbiechat:
+    aliases:
+      - 'nbchat'
