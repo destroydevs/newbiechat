@@ -12,6 +12,8 @@ connection:
     username: root # имя пользователя
     password: 'desroyyyytt' # пароль
 
+time-format: "%h%h. %m%m. %s%s."
+
 commands: # команда перезагрузки
   no-perm: '&cУ Вас нет прав.'
 

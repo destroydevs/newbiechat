@@ -16,7 +16,8 @@ public class Database {
     private static final Map<String, Data> playerData = new HashMap<>();
 
     public Database() {
-        if(!isConnected()) initialize(DataType.valueOf(NewbieChat.config().getString("connection.type").toUpperCase(Locale.ENGLISH)));
+        if (!isConnected())
+            initialize(DataType.valueOf(NewbieChat.config().getString("connection.type").toUpperCase(Locale.ENGLISH)));
     }
 
     public void initialize(DataType type) {
@@ -60,7 +61,7 @@ public class Database {
                     while (rs.next()) {
                         String name = rs.getString("name");
                         String data = rs.getString("data");
-                        playerData.put(name, new Gson().fromJson(data,Data.class));
+                        playerData.put(name, new Gson().fromJson(data, Data.class));
                     }
                 }
             }
@@ -81,9 +82,36 @@ public class Database {
     }
 
     public static void saveCooldowns() {
-        for (Map.Entry<String, Data> entry : playerData.entrySet()) {
-            String name = entry.getKey();
-            executeUpdate("UPDATE cooldowns SET data=" + new Gson().toJson(entry.getValue()) + " WHERE name='" + name + "'");
+        String selectSql = "SELECT data FROM cooldowns WHERE name = ?";
+        String updateSql = "UPDATE cooldowns SET data = ? WHERE name = ?";
+        String insertSql = "INSERT INTO cooldowns (name, data) VALUES (?, ?)";
+
+        try {
+            for (Map.Entry<String, Data> entry : playerData.entrySet()) {
+                String name = entry.getKey();
+                Data data = entry.getValue();
+                String jsonData = new Gson().toJson(data);
+
+                try (PreparedStatement selectStmt = connection.prepareStatement(selectSql)) {
+                    selectStmt.setString(1, name);
+                    ResultSet rs = selectStmt.executeQuery();
+                    if (rs.next()) {
+                        try (PreparedStatement updateStmt = connection.prepareStatement(updateSql)) {
+                            updateStmt.setString(1, jsonData);
+                            updateStmt.setString(2, name);
+                            updateStmt.executeUpdate();
+                        }
+                    } else {
+                        try (PreparedStatement insertStmt = connection.prepareStatement(insertSql)) {
+                            insertStmt.setString(1, name);
+                            insertStmt.setString(2, jsonData);
+                            insertStmt.executeUpdate();
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            Bukkit.getLogger().warning(e.getMessage());
         }
     }
 
@@ -94,6 +122,7 @@ public class Database {
                 "data TEXT);";
         executeUpdate(sql);
     }
+
     public void close() {
         try {
             connection.close();
@@ -103,15 +132,15 @@ public class Database {
     }
 
     public void setBlock(String p, int time) {
-        playerData.put(p,new Data(time,isBlocked(p)));
+        playerData.put(p, new Data(time, isBlocked(p)));
     }
 
     public boolean isBlocked(String p) {
-        return playerData.getOrDefault(p, new Data(0,false)).isBlocked();
+        return playerData.getOrDefault(p, new Data(0, false)).isBlocked();
     }
 
     public int getTime(String p) {
-        return playerData.getOrDefault(p, new Data(0,false)).getTime();
+        return playerData.getOrDefault(p, new Data(0, false)).getTime();
     }
 
     public boolean firstJoin(String p) {
@@ -119,23 +148,24 @@ public class Database {
     }
 
     public void startChecks() {
-        Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(()->{
-            Bukkit.getScheduler().runTask(NewbieChat.getPlugin(NewbieChat.class), ()->{
-                for(Map.Entry<String, Data> ps : playerData.entrySet()) {
+        Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(() -> {
+            Bukkit.getScheduler().runTask(NewbieChat.getPlugin(NewbieChat.class), () -> {
+                for (Map.Entry<String, Data> ps : playerData.entrySet()) {
                     Player p = Bukkit.getPlayer(ps.getKey());
-                    if(p == null) continue;
-                    if(isBlocked(ps.getKey())) {
+                    if (p == null) continue;
+                    if (isBlocked(ps.getKey())) {
                         int time = getTime(ps.getKey());
-                        if(time > 0) {
-                            playerData.put(ps.getKey(), new Data(ps.getValue().getTime()-1, ps.getValue().isBlocked()));
+                        if (time > 0) {
+                            playerData.put(ps.getKey(), new Data(ps.getValue().getTime() - 1, ps.getValue().isBlocked()));
                             continue;
                         }
                         playerData.put(ps.getKey(), new Data(0, false));
                     }
                 }
             });
-        },1,1,TimeUnit.SECONDS);
+        }, 1, 1, TimeUnit.SECONDS);
     }
+
     private static void executeUpdate(String url) {
         try {
             try (PreparedStatement statement = connection.prepareStatement(url)) {

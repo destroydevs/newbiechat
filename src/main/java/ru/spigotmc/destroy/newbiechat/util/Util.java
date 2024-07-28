@@ -7,8 +7,7 @@ import org.bukkit.entity.Player;
 public class Util {
 
     public static String formattedTime(long time) {
-        TimeFormat timeFormat = new TimeFormat(time*1000);
-        return timeFormat.toString();
+        return TimeFormat.format((int) time);
     }
 
     public static void startWithCheck(Player player, String sz) {
